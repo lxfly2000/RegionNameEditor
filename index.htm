@@ -154,9 +154,20 @@ function save_regionName() {
 	alert('保存功能尚未实现');
 }
 
+function _normLongitude(lon){
+	var nlon=lon%360;
+	if(nlon>180){
+		return nlon-360;
+	}else if(nlon<180){
+		return nlon+360;
+	}else{
+		return nlon;
+	}
+}
+
 function get_regionName(lat,lon){
 	try{
-		return regionData.name[regionData.table[Math.floor(lat)+90][Math.floor(lon)+180]];
+		return regionData.name[regionData.table[Math.floor(lat)+90][Math.floor(_normLongitude(lon))+180]];
 	}catch(e){
 		console.error("获取区域名称出错："+e.message);
 	}

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Guides</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.24.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.24.0/mapbox-gl.js"></script>
+    <style>
+body {
+    margin: 0;
+    padding: 0;
+}
+
+/* 顶部经纬度显示栏 */
+.FloatBox {
+    position: fixed;
+    z-index: 999; /* 确保在地图最上方 */
+    pointer-events: none;
+}
+
+.Row > div {
+    display: inline-block;
+}
+
+.FillBox {
+    background: rgba(255, 255, 255, 0.6);
+    font-size: 16px;
+    font-weight: 500;
+    padding: 0 10px;
+    pointer-events: all;
+    vertical-align: top;
+}
+
+.Topleft {
+    top: 10px;
+    left: 10px;
+}
+
+.Topright {
+    top: 10px;
+    right: 50px;
+}
+
+.Bottomleft {
+    bottom: 10px;
+    left: 10px;
+}
+
+/* 经纬度数值高亮 */
+.coord {
+    color: #0066ff;
+    font-weight: bold;
+    margin: 0 8px;
+    width: 60px;
+    display: inline-block;
+    font-family: monospace;
+}
+
+#map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+}
+    </style>
+</head>
+
+<body>
+    <!-- 顶部经纬度显示区域 -->
+    <div class="FloatBox Topleft Row">
+        <div class="FillBox Column">
+            <div class="Row">
+                <button onclick="open_fe()">打开</button>
+                <button onclick="save_fe()">保存</button>
+            </div>
+            <div class="Row">
+                经度：<div class="coord" id="lng">--</div>
+            </div>
+            <div class="Row">
+                纬度：<div class="coord" id="lat">--</div>
+            </div>
+            <div class="Row" style="width: 150px;">
+                <div id="region_name">鼠标指向的一个很长很长很长的地名</div>
+            </div>
+            <noscript>本页面需要打开JavaScript才能正常运行。</noscript>
+        </div>
+    </div>
+    <div class="FloatBox Topright Row">
+        <div class="FillBox Column">
+            <div class="Row">
+                投影：
+                <select id="mapProjection" onchange="onProjectionChange()">
+                    <option value="globe" selected>球体</option>
+                    <option value="equirectangular">等距圆柱</option>
+                    <option value="mercator">墨卡托</option>
+                </select>
+            </div>
+            <div class="Row">
+                <input type="checkbox" id="show-edit-layer" checked>
+                <label for="show-edit-layer">显示编辑层</label>
+            </div>
+        </div>
+        <div class="FillBox Column">
+            <span id="region_name">TODO:地名列表，输入框，增删改查，铅笔/填充/擦除/取色工具，是否显示编辑层，左键填色，中键取色，右键擦除</span>
+        </div>
+    </div>
+    <div id="map"></div>
+    <script>
+var regionData=null;//{table:[[...],...],name:["Name1",...]}
+
+function open_regionName() {
+    alert('打开功能尚未实现');
+}
+
+function save_regionName() {
+    alert('保存功能尚未实现');
+}
+
+function get_regionName(lat,lon){
+    try{
+        return regionData.name[regionData.table[Math.floor(lat)][Math.floor(lon)]];
+    }catch(e){
+        console.error("获取区域名称出错："+e.message);
+    }
+    return "";
+}
+
+function check_regionName_valid(json_data){
+    try{
+        for(let y=0;lat<90;lat++){
+            for(let lon=-180;lon<180;lon++){
+                if(typeof json_data.name[json_data.table[lat]] !== "string"){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }catch(e){
+        console.log("检查文件出错："+e.message);
+    }
+    return false;
+}
+
+function get_query(param, defaultVal) {
+    const searchParams = new URLSearchParams(window.location.search);
+    const value = searchParams.get(param);
+    return value || defaultVal;
+}
+
+function onProjectionChange(){
+    window.map.setProjection(mapProjection.value);
+}
+
+function fe_main(){
+    //Mapbox参考：https://docs.mapbox.com/mapbox-gl-js/guides/
+    mapboxgl.setRTLTextPlugin(
+        'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.3.0/mapbox-gl-rtl-text.js',
+        null,
+        true // Lazy load the plugin
+    );
+
+    window.map = new mapboxgl.Map({
+        accessToken: get_query("mapboxAccessToken","pk.eyJ1IjoibHhmbHkyMDAwIiwiYSI6ImNtNjlkb2k1OTA5aGgyaXNkeTRtbTFpMTMifQ.aISHpciwWgFtyC1ibIR5Jg"),
+        container: 'map',
+        style: get_query("mapboxStyle","mapbox://styles/lxfly2000/clgijkcjz006x01pk870j2uxo"), // Use the standard style for the map
+        projection: mapProjection.value, // display the map as a globe
+        zoom: 1, // initial zoom level, 0 is the world view, higher values zoom in
+        center: [106.4, 29.8] // center the map on this longitude and latitude
+    });
+
+    map.addControl(new mapboxgl.NavigationControl());
+    //map.scrollZoom.disable();
+
+    map.on('style.load', () => {
+        map.setFog({}); // Set the default atmosphere style
+    });
+
+    // 4. 获取DOM元素
+    const lngElement = document.getElementById('lng');
+    const latElement = document.getElementById('lat');
+    const regionNameElement = document.getElementById('region_name');
+    // 5. 监听鼠标移动事件，实时更新经纬度
+    map.on('mousemove', (e) => {
+        // 获取鼠标指向的经纬度
+        const longitude = e.lngLat.lng.toFixed(2);
+        const latitude = e.lngLat.lat.toFixed(2);
+        
+        // 更新页面显示
+        lngElement.textContent = longitude;
+        latElement.textContent = latitude;
+        if(regionData){
+            regionNameElement.textContent = get_regionName(latitude,longitude);
+        }
+    });
+
+    // 6. 鼠标离开地图时重置显示
+    map.on('mouseleave', () => {
+        lngElement.textContent = '--';
+        latElement.textContent = '--';
+    });
+}
+
+fe_main();
+    </script>
+
+</body>
+
+</html>

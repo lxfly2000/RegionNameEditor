@@ -2,327 +2,305 @@
 <html>
 
 <head>
-    <meta charset="utf-8">
-    <title>区域名称编辑器</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.24.0/mapbox-gl.css" rel="stylesheet">
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.24.0/mapbox-gl.js"></script>
-    <style>
+	<meta charset="utf-8">
+	<title>区域名称编辑器</title>
+	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+	<link href="https://api.mapbox.com/mapbox-gl-js/v3.24.0/mapbox-gl.css" rel="stylesheet">
+	<script src="https://api.mapbox.com/mapbox-gl-js/v3.24.0/mapbox-gl.js"></script>
+	<style>
 body {
-    margin: 0;
-    padding: 0;
+	margin: 0;
+	padding: 0;
 }
 
 /* 顶部经纬度显示栏 */
 .FloatBox {
-    position: fixed;
-    z-index: 999; /* 确保在地图最上方 */
-    pointer-events: none;
+	position: fixed;
+	z-index: 999; /* 确保在地图最上方 */
+	pointer-events: none;
 }
 
 .Row > div {
-    display: inline-block;
+	display: inline-block;
 }
 
 .FillBox {
-    background: rgba(255, 255, 255, 0.6);
-    font-size: 16px;
-    font-weight: 500;
-    padding: 5px 10px;
-    pointer-events: all;
-    vertical-align: top;
+	background: rgba(255, 255, 255, 0.6);
+	font-size: 16px;
+	font-weight: 500;
+	padding: 5px 10px;
+	pointer-events: all;
+	vertical-align: top;
 }
 
 .Topleft {
-    top: 10px;
-    left: 10px;
+	top: 10px;
+	left: 10px;
 }
 
 .Topright {
-    top: 10px;
-    right: 50px;
+	top: 10px;
+	right: 50px;
 }
 
 .Bottomleft {
-    bottom: 10px;
-    left: 10px;
+	bottom: 10px;
+	left: 10px;
 }
 
 /* 经纬度数值高亮 */
 .coord {
-    color: #0066ff;
-    font-weight: bold;
-    margin: 0 8px;
-    width: 60px;
-    display: inline-block;
-    font-family: monospace;
+	color: #0066ff;
+	font-weight: bold;
+	margin: 0 8px;
+	width: 60px;
+	display: inline-block;
+	font-family: monospace;
 }
 
 #map {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 100%;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 100%;
 }
-    </style>
+	</style>
 </head>
 
 <body>
-    <!-- 顶部经纬度显示区域 -->
-    <div class="FloatBox Topleft Row">
-        <div class="FillBox Column">
-            <div class="Row">
-                <button onclick="open_regionName()">打开</button>
-                <button onclick="save_regionName()">保存</button>
-            </div>
-            <div class="Row">
-                经度：<div class="coord" id="lng">--</div>
-            </div>
-            <div class="Row">
-                纬度：<div class="coord" id="lat">--</div>
-            </div>
-            <div class="Row" style="width: 150px;background-color: white;">
-                <div id="region_name">地名</div>
-            </div>
-            <noscript>本页面需要打开JavaScript才能正常运行。</noscript>
-            <div id="region_name">输入框，增删改查，<br>左键拖动，中键显示，右键/空格填色<br>显示鼠标指向区域（指在地图上）</div>
-        </div>
-    </div>
-    <div class="FloatBox Topright Row" style="bottom: 50px;">
-        <div class="FillBox Column">
-            <div class="Row">
-                投影：
-                <select id="mapProjection" onchange="onProjectionChange()">
-                    <option value="globe" selected>球体</option>
-                    <option value="equirectangular">等距圆柱</option>
-                    <option value="mercator">墨卡托</option>
-                </select>
-            </div>
-            <div class="Row">
-                <input type="checkbox" id="show-edit-layer" checked>
-                <label for="show-edit-layer">显示编辑层</label>
-            </div>
-        </div>
-        <div class="FillBox Column" style="height: 100%;">
-            <div style="height: 100%;display: flex;flex-direction: column;">
-                <div class="Row">
-                    <input id="inputSearch" placeholder="搜索…" onchange="onSearchChange()" style="width: 200px;"/>
-                </div>
-                <div class="Row" style="flex-grow: 1;">
-                    <select id="regionNameList" onchange="onRegionNameListChange()" multiple style="width: 200px;height: 100%;">
-                        <option>TODO</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="map"></div>
-    <script>
+	<!-- 顶部经纬度显示区域 -->
+	<div class="FloatBox Topleft Row">
+		<div class="FillBox Column">
+			<div class="Row">
+				<button onclick="srcFile.click()">打开</button>
+				<button onclick="save_regionName()">保存</button>
+				<button onclick="showHelp()">帮助</button>
+				<input type="file" id="srcFile" accept="application/json,*" onchange="open_regionName()" style="display: none;">
+			</div>
+			<div class="Row">
+				经度：<div class="coord" id="lng">--</div>
+			</div>
+			<div class="Row">
+				纬度：<div class="coord" id="lat">--</div>
+			</div>
+			<div class="Row" style="width: 150px;background-color: white;">
+				<div id="region_name">地名</div>
+			</div>
+			<noscript>本页面需要打开JavaScript才能正常运行。</noscript>
+		</div>
+	</div>
+	<div class="FloatBox Topright Row" style="bottom: 50px;">
+		<div class="FillBox Column">
+			<div class="Row">
+				投影：
+				<select id="mapProjection" onchange="onProjectionChange()">
+					<option value="globe" selected>球体</option>
+					<option value="equirectangular">等距圆柱</option>
+					<option value="mercator">墨卡托</option>
+				</select>
+			</div>
+			<div class="Row">
+				<input type="checkbox" id="showEditLayer" checked><label for="showEditLayer">显示编辑层</label>
+			</div>
+		</div>
+		<div class="FillBox Column" style="height: 100%;">
+			<div style="height: 100%;display: flex;flex-direction: column;">
+				<div class="Row">
+					<input id="inputSearch" placeholder="输入名称…" onchange="onSearchChange()" style="width: 200px;"/>
+				</div>
+				<div class="Row">
+					<button onclick="onAddName()">添加</button>
+					<button onclick="onRemoveName()">删除</button>
+					<button onclick="onModifyName()">重命名</button>
+					<input type="checkbox" id="checkSearchName" onchange="onCheckSearchName()"><label for="checkSearchName">查找</label>
+				</div>
+				<div class="Row" style="flex-grow: 1;">
+					<select id="regionNameList" onchange="onRegionNameListChange()" multiple style="width: 200px;height: 100%;">
+						<option>TODO</option>
+					</select>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="map"></div>
+	<script>
 var regionData=null;//{table:[[...],...],name:["Name1",...]}
 
+function showHelp(){
+	alert("左键拖动，中键显示，右键填色\nTODO:显示鼠标指向区域（指在地图上）");
+}
+
 function open_regionName() {
-    alert('打开功能尚未实现');
+	/**@type {FileList}*/var inputFile=document.getElementById("srcFile").files;
+	if(inputFile.length==0){
+		return;
+	}
+	const fileReader=new FileReader();
+	fileReader.readAsText(inputFile[0]);
+	fileReader.onload=()=>{loadRegionFile(fileReader.result);};
+}
+
+function loadRegionFile(str){
+	const json=JSON.parse(str);
+	if(check_regionName_valid(json)){
+		regionData=json;
+		//TODO:加载到地图、界面上
+	}else{
+		alert("无法读取该文件。");
+	}
 }
 
 function save_regionName() {
-    alert('保存功能尚未实现');
+	alert('保存功能尚未实现');
 }
 
 function get_regionName(lat,lon){
-    try{
-        return regionData.name[regionData.table[Math.floor(lat)][Math.floor(lon)]];
-    }catch(e){
-        console.error("获取区域名称出错："+e.message);
-    }
-    return "";
+	try{
+		return regionData.name[regionData.table[Math.floor(lat)+90][Math.floor(lon)+180]];
+	}catch(e){
+		console.error("获取区域名称出错："+e.message);
+	}
+	return "";
 }
 
 function check_regionName_valid(json_data){
-    try{
-        for(let y=0;lat<90;lat++){
-            for(let lon=-180;lon<180;lon++){
-                if(typeof json_data.name[json_data.table[lat]] !== "string"){
-                    return false;
-                }
-            }
-        }
-        return true;
-    }catch(e){
-        console.log("检查文件出错："+e.message);
-    }
-    return false;
+	try{
+		for(var y=0;lat<90;lat++){
+			for(var lon=-180;lon<180;lon++){
+				if(typeof json_data.name[json_data.table[lat]] !== "string"){
+					return false;
+				}
+			}
+		}
+		return true;
+	}catch(e){
+		console.log("检查文件出错："+e.message);
+	}
+	return false;
 }
 
 function get_query(param, defaultVal) {
-    const searchParams = new URLSearchParams(window.location.search);
-    const value = searchParams.get(param);
-    return value || defaultVal;
+	const searchParams = new URLSearchParams(window.location.search);
+	const value = searchParams.get(param);
+	return value || defaultVal;
 }
 
 function onProjectionChange(){
-    window.map.setProjection(mapProjection.value);
+	window.map.setProjection(mapProjection.value);
 }
 
 function onSearchChange(){
-    //
+	//
 }
 
 function onRegionNameListChange(){
-    //
+	//
 }
 
-/*
-In Mapbox GL JS, there is no dedicated "rectangle" layer type. Instead, you represent a rectangle as a **polygon** (using GeoJSON) and render it with a `fill` layer.
-
-Here's how to do it:
-
-**1. Add a GeoJSON source with your rectangle coordinates**
-
-A rectangle is just a polygon with 4 corner coordinates (plus the first repeated to close the ring):
-
-```js
-map.on('load', () => {
-  map.addSource('my-rectangle', {
-    type: 'geojson',
-    data: {
-      type: 'Feature',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[
-          [-74.01, 40.70],  // bottom-left
-          [-73.97, 40.70],  // bottom-right
-          [-73.97, 40.73],  // top-right
-          [-74.01, 40.73],  // top-left
-          [-74.01, 40.70]   // close the ring
-        ]]
-      }
-    }
-  });
-
-  // Add a fill layer to render the rectangle
-  map.addLayer({
-    id: 'my-rectangle-fill',
-    type: 'fill',
-    source: 'my-rectangle',
-    paint: {
-      'fill-color': '#0080ff',
-      'fill-opacity': 0.5
-    }
-  });
-
-  // Optionally, add a line layer for the border
-  map.addLayer({
-    id: 'my-rectangle-outline',
-    type: 'line',
-    source: 'my-rectangle',
-    paint: {
-      'line-color': '#000',
-      'line-width': 2
-    }
-  });
-});
-```
-
-**Key points:**
-
-- Use a **`fill` layer** to render the filled polygon (your rectangle). [[Fill layer docs](https://docs.mapbox.com/mapbox-gl-js/guides/styles/work-with-layers/#layer-types)]
-- Optionally add a **`line` layer** on the same source to draw the border. [[Polygon example](https://docs.mapbox.com/mapbox-gl-js/example/geojson-polygon/)]
-- Always add layers inside the `map.on('load', ...)` callback to ensure the style is ready before adding layers. [[Key concepts](https://docs.mapbox.com/mapbox-gl-js/guides/#layers)]
-- Use `layout` and `paint` properties to customize appearance (color, opacity, etc.). [[Layout & paint](https://docs.mapbox.com/mapbox-gl-js/guides/#layout-and-paint-properties)]
-*/
 function rect_geojson(lonInt,latInt){
-    var lonWest=lonInt;
-    var lonEast=lonInt+1;
-    var latSouth=latInt;
-    var latNorth=latInt+1;
-    return {
-        type: 'Feature',
-        geometry: {
-            type: 'Polygon',
-            coordinates: [[
-                [lonWest, latSouth],  // bottom-left
-                [lonEast, latSouth],  // bottom-right
-                [lonEast, latNorth],  // top-right
-                [lonWest, latNorth],  // top-left
-                [lonWest, latSouth]   // close the ring
-            ]]
-        }
-    };
+	var lonWest=lonInt;
+	var lonEast=lonInt+1;
+	var latSouth=latInt;
+	var latNorth=latInt+1;
+	return {
+		type: 'Feature',
+		geometry: {
+			type: 'Polygon',
+			coordinates: [[
+				[lonWest, latSouth],  // bottom-left
+				[lonEast, latSouth],  // bottom-right
+				[lonEast, latNorth],  // top-right
+				[lonWest, latNorth],  // top-left
+				[lonWest, latSouth]   // close the ring
+			]]
+		}
+	};
 }
 
 function fe_main(){
-    //Mapbox参考：https://docs.mapbox.com/mapbox-gl-js/guides/
-    mapboxgl.setRTLTextPlugin(
-        'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.3.0/mapbox-gl-rtl-text.js',
-        null,
-        true // Lazy load the plugin
-    );
+	//Mapbox参考：https://docs.mapbox.com/mapbox-gl-js/guides/
+	mapboxgl.setRTLTextPlugin(
+		'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.3.0/mapbox-gl-rtl-text.js',
+		null,
+		true // Lazy load the plugin
+	);
 
-    window.map = new mapboxgl.Map({
-        accessToken: get_query("mapboxAccessToken","pk.eyJ1IjoibHhmbHkyMDAwIiwiYSI6ImNtNjlkb2k1OTA5aGgyaXNkeTRtbTFpMTMifQ.aISHpciwWgFtyC1ibIR5Jg"),
-        container: 'map',
-        style: get_query("mapboxStyle","mapbox://styles/lxfly2000/clgijkcjz006x01pk870j2uxo"), // Use the standard style for the map
-        projection: mapProjection.value, // display the map as a globe
-        zoom: 1, // initial zoom level, 0 is the world view, higher values zoom in
-        center: [106.4, 29.8] // center the map on this longitude and latitude
-    });
+	window.map = new mapboxgl.Map({
+		accessToken: get_query("mapboxAccessToken","pk.eyJ1IjoibHhmbHkyMDAwIiwiYSI6ImNtNjlkb2k1OTA5aGgyaXNkeTRtbTFpMTMifQ.aISHpciwWgFtyC1ibIR5Jg"),
+		container: 'map',
+		style: get_query("mapboxStyle","mapbox://styles/lxfly2000/clgijkcjz006x01pk870j2uxo"), // Use the standard style for the map
+		projection: mapProjection.value, // display the map as a globe
+		zoom: 1, // initial zoom level, 0 is the world view, higher values zoom in
+		center: [106.4, 29.8] // center the map on this longitude and latitude
+	});
 
-    map.addControl(new mapboxgl.NavigationControl());
-    //map.scrollZoom.disable();
+	map.addControl(new mapboxgl.NavigationControl());
+	//map.scrollZoom.disable();
 
-    map.on('style.load', () => {
-        map.setFog({}); // Set the default atmosphere style
-    });
+	map.on('style.load', () => {
+		map.setFog({}); // Set the default atmosphere style
+	});
 
-    // 4. 获取DOM元素
-    const lngElement = document.getElementById('lng');
-    const latElement = document.getElementById('lat');
-    const regionNameElement = document.getElementById('region_name');
-    // 5. 监听鼠标移动事件，实时更新经纬度
-    map.on('mousemove', (e) => {
-        // 获取鼠标指向的经纬度
-        const longitude = e.lngLat.lng.toFixed(2);
-        const latitude = e.lngLat.lat.toFixed(2);
-        
-        // 更新页面显示
-        lngElement.textContent = longitude;
-        latElement.textContent = latitude;
-        if(regionData){
-            regionNameElement.textContent = get_regionName(latitude,longitude);
-        }
-    });
+	// 4. 获取DOM元素
+	const lngElement = document.getElementById('lng');
+	const latElement = document.getElementById('lat');
+	const regionNameElement = document.getElementById('region_name');
+	// 5. 监听鼠标移动事件，实时更新经纬度
+	map.on('mousemove', (e) => {
+		// 获取鼠标指向的经纬度
+		const longitude = e.lngLat.lng.toFixed(2);
+		const latitude = e.lngLat.lat.toFixed(2);
+		
+		// 更新页面显示
+		lngElement.textContent = longitude;
+		latElement.textContent = latitude;
+		if(regionData){
+			regionNameElement.textContent = get_regionName(latitude,longitude);
+		}
+	});
 
-    // 6. 鼠标离开地图时重置显示
-    map.on('mouseleave', () => {
-        lngElement.textContent = '--';
-        latElement.textContent = '--';
-    });
+	// 6. 鼠标离开地图时重置显示
+	map.on('mouseleave', () => {
+		lngElement.textContent = '--';
+		latElement.textContent = '--';
+	});
 
-    map.on('load', () => {
-        for(var y=-90;y<90;y++){
-            for(var x=-180;x<180;x++){
-                map.addSource('my-rectangle', {
-                    type: 'geojson',
-                    data: rect_geojson(x,y)
-                });
-            }
-        }
+	map.on('load', () => {
+		for(var y=-90;y<90;y++){
+			for(var x=-180;x<180;x++){
+				map.addSource('my-rectangle', {
+					type: 'geojson',
+					data: rect_geojson(x,y)
+				});
+			}
+		}
 
-        // Add a fill layer to render the rectangle
-        map.addLayer({
-            id: 'my-rectangle-fill',
-            type: 'fill',
-            source: 'my-rectangle',
-            paint: {
-                'fill-color': '#0080ff',
-                'fill-opacity': 0.5
-            }
-        });
-    });
+		// Add a fill layer to render the rectangle
+		map.addLayer({
+			id: 'my-rectangle-fill',
+			type: 'fill',
+			source: 'my-rectangle',
+			paint: {
+				'fill-color': '#0080ff',
+				'fill-opacity': 0.5
+			}
+		});
+	});
+
+	//加载自带数据
+	var xhr=new XMLHttpRequest();
+	xhr.open("GET","regions.json",true);
+	xhr.onreadystatechange=function(){
+		if(xhr.readyState===4||xhr.status===200){//服务器正确响应
+			loadRegionFile(xhr.responseText);
+		}
+	}
+	//发送请求
+	xhr.send();
 }
 
 fe_main();
-    </script>
+	</script>
 
 </body>
 

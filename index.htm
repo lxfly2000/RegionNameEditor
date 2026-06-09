@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Guides</title>
+    <title>区域名称编辑器</title>
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.24.0/mapbox-gl.css" rel="stylesheet">
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.24.0/mapbox-gl.js"></script>
@@ -28,7 +28,7 @@ body {
     background: rgba(255, 255, 255, 0.6);
     font-size: 16px;
     font-weight: 500;
-    padding: 0 10px;
+    padding: 5px 10px;
     pointer-events: all;
     vertical-align: top;
 }
@@ -72,8 +72,8 @@ body {
     <div class="FloatBox Topleft Row">
         <div class="FillBox Column">
             <div class="Row">
-                <button onclick="open_fe()">打开</button>
-                <button onclick="save_fe()">保存</button>
+                <button onclick="open_regionName()">打开</button>
+                <button onclick="save_regionName()">保存</button>
             </div>
             <div class="Row">
                 经度：<div class="coord" id="lng">--</div>
@@ -81,13 +81,14 @@ body {
             <div class="Row">
                 纬度：<div class="coord" id="lat">--</div>
             </div>
-            <div class="Row" style="width: 150px;">
-                <div id="region_name">鼠标指向的一个很长很长很长的地名</div>
+            <div class="Row" style="width: 150px;background-color: white;">
+                <div id="region_name">地名</div>
             </div>
             <noscript>本页面需要打开JavaScript才能正常运行。</noscript>
+            <div id="region_name">输入框，增删改查，<br>左键拖动，中键显示，右键/空格填色<br>显示鼠标指向区域（指在地图上）</div>
         </div>
     </div>
-    <div class="FloatBox Topright Row">
+    <div class="FloatBox Topright Row" style="bottom: 50px;">
         <div class="FillBox Column">
             <div class="Row">
                 投影：
@@ -102,8 +103,17 @@ body {
                 <label for="show-edit-layer">显示编辑层</label>
             </div>
         </div>
-        <div class="FillBox Column">
-            <span id="region_name">TODO:地名列表，输入框，增删改查，铅笔/填充/擦除/取色工具，是否显示编辑层，左键填色，中键取色，右键擦除</span>
+        <div class="FillBox Column" style="height: 100%;">
+            <div style="height: 100%;display: flex;flex-direction: column;">
+                <div class="Row">
+                    <input id="inputSearch" placeholder="搜索…" onchange="onSearchChange()" style="width: 200px;"/>
+                </div>
+                <div class="Row" style="flex-grow: 1;">
+                    <select id="regionNameList" onchange="onRegionNameListChange()" multiple style="width: 200px;height: 100%;">
+                        <option>TODO</option>
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
     <div id="map"></div>
@@ -153,6 +163,93 @@ function onProjectionChange(){
     window.map.setProjection(mapProjection.value);
 }
 
+function onSearchChange(){
+    //
+}
+
+function onRegionNameListChange(){
+    //
+}
+
+/*
+In Mapbox GL JS, there is no dedicated "rectangle" layer type. Instead, you represent a rectangle as a **polygon** (using GeoJSON) and render it with a `fill` layer.
+
+Here's how to do it:
+
+**1. Add a GeoJSON source with your rectangle coordinates**
+
+A rectangle is just a polygon with 4 corner coordinates (plus the first repeated to close the ring):
+
+```js
+map.on('load', () => {
+  map.addSource('my-rectangle', {
+    type: 'geojson',
+    data: {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [-74.01, 40.70],  // bottom-left
+          [-73.97, 40.70],  // bottom-right
+          [-73.97, 40.73],  // top-right
+          [-74.01, 40.73],  // top-left
+          [-74.01, 40.70]   // close the ring
+        ]]
+      }
+    }
+  });
+
+  // Add a fill layer to render the rectangle
+  map.addLayer({
+    id: 'my-rectangle-fill',
+    type: 'fill',
+    source: 'my-rectangle',
+    paint: {
+      'fill-color': '#0080ff',
+      'fill-opacity': 0.5
+    }
+  });
+
+  // Optionally, add a line layer for the border
+  map.addLayer({
+    id: 'my-rectangle-outline',
+    type: 'line',
+    source: 'my-rectangle',
+    paint: {
+      'line-color': '#000',
+      'line-width': 2
+    }
+  });
+});
+```
+
+**Key points:**
+
+- Use a **`fill` layer** to render the filled polygon (your rectangle). [[Fill layer docs](https://docs.mapbox.com/mapbox-gl-js/guides/styles/work-with-layers/#layer-types)]
+- Optionally add a **`line` layer** on the same source to draw the border. [[Polygon example](https://docs.mapbox.com/mapbox-gl-js/example/geojson-polygon/)]
+- Always add layers inside the `map.on('load', ...)` callback to ensure the style is ready before adding layers. [[Key concepts](https://docs.mapbox.com/mapbox-gl-js/guides/#layers)]
+- Use `layout` and `paint` properties to customize appearance (color, opacity, etc.). [[Layout & paint](https://docs.mapbox.com/mapbox-gl-js/guides/#layout-and-paint-properties)]
+*/
+function rect_geojson(lonInt,latInt){
+    var lonWest=lonInt;
+    var lonEast=lonInt+1;
+    var latSouth=latInt;
+    var latNorth=latInt+1;
+    return {
+        type: 'Feature',
+        geometry: {
+            type: 'Polygon',
+            coordinates: [[
+                [lonWest, latSouth],  // bottom-left
+                [lonEast, latSouth],  // bottom-right
+                [lonEast, latNorth],  // top-right
+                [lonWest, latNorth],  // top-left
+                [lonWest, latSouth]   // close the ring
+            ]]
+        }
+    };
+}
+
 function fe_main(){
     //Mapbox参考：https://docs.mapbox.com/mapbox-gl-js/guides/
     mapboxgl.setRTLTextPlugin(
@@ -199,6 +296,28 @@ function fe_main(){
     map.on('mouseleave', () => {
         lngElement.textContent = '--';
         latElement.textContent = '--';
+    });
+
+    map.on('load', () => {
+        for(var y=-90;y<90;y++){
+            for(var x=-180;x<180;x++){
+                map.addSource('my-rectangle', {
+                    type: 'geojson',
+                    data: rect_geojson(x,y)
+                });
+            }
+        }
+
+        // Add a fill layer to render the rectangle
+        map.addLayer({
+            id: 'my-rectangle-fill',
+            type: 'fill',
+            source: 'my-rectangle',
+            paint: {
+                'fill-color': '#0080ff',
+                'fill-opacity': 0.5
+            }
+        });
     });
 }
 

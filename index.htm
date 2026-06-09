@@ -157,12 +157,11 @@ function save_regionName() {
 function _normLongitude(lon){
 	var nlon=lon%360;
 	if(nlon>180){
-		return nlon-360;
-	}else if(nlon<180){
-		return nlon+360;
-	}else{
-		return nlon;
+		nlon-=360;
+	}else if(nlon<-180){
+		nlon+=360;
 	}
+	return nlon;
 }
 
 function get_regionName(lat,lon){

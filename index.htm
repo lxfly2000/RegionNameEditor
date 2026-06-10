@@ -288,6 +288,9 @@ function onAddName(){
 	if(checkSearchName.checked){
 		checkSearchName.click();
 	}
+	if(inputSearch.value.length===0){
+		return;
+	}
 	if(findNameIndex(inputSearch.value)!==-1){
 		alert("已存在该名称。");
 		return;
@@ -318,6 +321,9 @@ function onRemoveName(){
 function onModifyName(){
 	if(checkSearchName.checked){
 		checkSearchName.click();
+	}
+	if(inputSearch.value.length===0){
+		return;
 	}
 	if(findNameIndex(inputSearch.value)!==-1){
 		alert("已存在该名称。");

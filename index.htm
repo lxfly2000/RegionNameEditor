@@ -154,11 +154,13 @@ body {
 var regionData=null;//{table:[[...],...],name:["Name1",...]}
 
 function showHelp(){
-	alert("左键拖动，中键选择，右键填充");
+	alert("左键拖动，中键选择，右键填充。\n获取经纬度对应地名：(-90≤lat＜90, -180≤lon＜180)\n"+
+	'const regions=JSON.parse("regions.json文件内容");\n'+
+	"const name=regions.name[regions.table[Math.floor(lat)+90][Math.floor(lon)+180]];");
 }
 
 function open_regionName() {
-	/**@type {FileList}*/var inputFile=document.getElementById("srcFile").files;
+	/**@type {FileList}*/const inputFile=document.getElementById("srcFile").files;
 	if(inputFile.length==0){
 		return;
 	}
@@ -304,7 +306,7 @@ function findNameIndex(s){
 }
 
 function onRegionNameListChange(){
-	var index=findNameIndex(regionNameList.value);
+	const index=findNameIndex(regionNameList.value);
 	inputSearch.value=regionData.name[index];
 	showRegionOnMap(index);
 }
@@ -329,7 +331,7 @@ function onRemoveName(){
 	if(checkSearchName.checked){
 		checkSearchName.click();
 	}
-	var index=findNameIndex(regionNameList.value);
+	const index=findNameIndex(regionNameList.value);
 	if(index<0||index>=regionData.name.length){
 		return;
 	}
@@ -354,7 +356,7 @@ function onModifyName(){
 		alert("已存在该名称。");
 		return;
 	}
-	var index=findNameIndex(regionNameList.value);
+	const index=findNameIndex(regionNameList.value);
 	if(index<0||index>=regionData.name.length){
 		return;
 	}
@@ -364,10 +366,10 @@ function onModifyName(){
 }
 
 function rect_geojson(lonInt,latInt){
-	var lonWest=lonInt;
-	var lonEast=lonInt+1;
-	var latSouth=latInt;
-	var latNorth=latInt+1;
+	const lonWest=lonInt;
+	const lonEast=lonInt+1;
+	const latSouth=latInt;
+	const latNorth=latInt+1;
 	return [[
 		[lonWest, latSouth],  // bottom-left
 		[lonEast, latSouth],  // bottom-right
@@ -377,10 +379,10 @@ function rect_geojson(lonInt,latInt){
 }
 
 function rect_closed_geojson(lonInt,latInt){
-	var lonWest=lonInt;
-	var lonEast=lonInt+1;
-	var latSouth=latInt;
-	var latNorth=latInt+1;
+	const lonWest=lonInt;
+	const lonEast=lonInt+1;
+	const latSouth=latInt;
+	const latNorth=latInt+1;
 	return [[
 		[lonWest, latSouth],  // bottom-left
 		[lonEast, latSouth],  // bottom-right
@@ -437,6 +439,7 @@ function str_xor(a,key){
 
 var lastPointRegionName=null;
 var lastPointingCoord=[0,0];//lon,lat
+var rmbStatus=0;
 
 function fe_main(){
 	//Mapbox参考：https://docs.mapbox.com/mapbox-gl-js/guides/
@@ -471,12 +474,14 @@ function fe_main(){
 		// 获取鼠标指向的经纬度
 		const longitude = e.lngLat.lng.toFixed(2);
 		const latitude = e.lngLat.lat.toFixed(2);
+		const lonInt=Math.floor(longitude);
+		const latInt=Math.floor(latitude);
 		
 		// 更新页面显示
 		lngElement.textContent = longitude;
 		latElement.textContent = latitude;
 		if(regionData){
-			var n=get_regionName(latitude,longitude);
+			const n=get_regionName(latitude,longitude);
 			regionNameElement.textContent = n;
 			if(showPointingRegion.checked&&lastPointRegionName!==n){
 				lastPointRegionName=n;
@@ -486,17 +491,33 @@ function fe_main(){
 				regionNameList.value=n;
 				onRegionNameListChange();
 			}
+			if(e.originalEvent.button===2||rmbStatus===1){
+				rmbStatus=1;
+				const x=lonInt+180;
+				const y=latInt+90;
+				var index=findNameIndex(regionNameList.value);
+				if(index!==-1&&index!==regionData.table[y][x]){
+					regionData.table[y][x]=index;
+					showRegionOnMap(index);
+				}
+			}
 		}
-		const lonInt=Math.floor(longitude);
-		const latInt=Math.floor(latitude);
 		if(lonInt!==lastPointingCoord[0]||latInt!==lastPointingCoord[1]){
 			lastPointingCoord=[lonInt,latInt];
 			map.getSource("pointingSource").setData(region_box_geojson(lastPointingCoord));
 		}
 	}
+	const mouseReleaseCbk=(e)=>{
+		if(e.originalEvent.button===2){
+			rmbStatus=0;
+		}
+	};
 	// 5. 监听鼠标移动事件，实时更新经纬度
 	map.on('mousemove', mouseCallback);
 	map.on('mousedown', mouseCallback);
+	map.on('mouseup', mouseReleaseCbk);
+	//禁用地图Canvas的右键菜单
+	document.getElementsByClassName("mapboxgl-canvas")[0].addEventListener("contextmenu",e=>e.preventDefault());
 
 	// 6. 鼠标离开地图时重置显示
 	map.on('mouseleave', () => {

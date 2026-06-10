@@ -441,7 +441,7 @@ function fe_main(){
 	var xhr=new XMLHttpRequest();
 	xhr.open("GET","regions.json",true);
 	xhr.onreadystatechange=function(){
-		if(xhr.readyState===4||xhr.status===200){//服务器正确响应
+		if(xhr.readyState===4&&xhr.status===200){//服务器正确响应
 			loadRegionFile(xhr.responseText);
 		}
 	}

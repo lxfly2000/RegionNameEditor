@@ -96,6 +96,7 @@ body {
 				<button onclick="save_regionName()">保存</button>
 				<button onclick="showHelp()">帮助</button>
 				<input type="file" id="srcFile" accept="application/json,*" onchange="open_regionName()" style="display: none;">
+				<a id="saveLink" style="display: none;"></a>
 			</div>
 			<div class="Row">
 				经度：<div class="coord" id="lng">--</div>
@@ -120,7 +121,10 @@ body {
 				</select>
 			</div>
 			<div class="Row">
-				<input type="checkbox" id="showEditLayer" checked><label for="showEditLayer">显示编辑层</label>
+				<input type="checkbox" id="showEditLayer" onchange="onCheckShowEditLayer()" checked><label for="showEditLayer">显示编辑层</label>
+			</div>
+			<div class="Row">
+				<input type="checkbox" id="showPointingRegion" onchange="onCheckShowPointingRegion()" checked><label for="showPointingRegion">显示指向区域</label>
 			</div>
 		</div>
 		<div id="collapseBox" class="FillBox Column DynHeight">
@@ -150,7 +154,7 @@ body {
 var regionData=null;//{table:[[...],...],name:["Name1",...]}
 
 function showHelp(){
-	alert("左键拖动，中键显示，右键填色\nTODO:显示鼠标指向区域（指在地图上）");
+	alert("左键拖动，中键选择，右键填充");
 }
 
 function open_regionName() {
@@ -184,7 +188,6 @@ function loadRegionFile(str){
 	const json=JSON.parse(str);
 	if(check_regionName_valid(json)){
 		regionData=json;
-		//TODO:加载到地图、界面上
 		var opts="";
 		for(var i=0;i<regionData.name.length;i++){
 			opts+="<option value='"+regionData.name[i]+"'>"+regionData.name[i]+"</option>";
@@ -196,7 +199,14 @@ function loadRegionFile(str){
 }
 
 function save_regionName() {
-	alert('保存功能尚未实现');
+	if(!regionData){
+		return;
+	}
+	const data=new Blob([JSON.stringify(regionData)], {type:"application/json"});
+	const url=URL.createObjectURL(data);
+	saveLink.href=url;
+	saveLink.download="regions.json";
+	saveLink.click();
 }
 
 function _normLongitude(lon){
@@ -241,7 +251,7 @@ function get_query(param, defaultVal) {
 }
 
 function onProjectionChange(){
-	window.map.setProjection(mapProjection.value);
+	map.setProjection(mapProjection.value);
 }
 
 function onCheckSearchName(){
@@ -254,12 +264,23 @@ function onCheckSearchName(){
 	}
 }
 
+function onCheckShowEditLayer(){
+	map.setLayoutProperty("regionFill","visibility",showEditLayer.checked?"visible":"none");
+}
+
+function onCheckShowPointingRegion(){
+	if(!showPointingRegion.checked){
+		showRegionOnMap(findNameIndex(regionNameList.value));
+	}
+}
+
 function onSearchChange(s){
 	if(checkSearchName.checked){
 		filterNameList(s);
 		for(var i=0;i<regionNameList.childNodes.length;i++){
 			if(regionNameList.childNodes[i].value.indexOf(s)!==-1){
 				regionNameList.value=regionNameList.childNodes[i].value;
+				showRegionOnMap(findNameIndex(s));
 				break;
 			}
 		}
@@ -281,7 +302,9 @@ function findNameIndex(s){
 }
 
 function onRegionNameListChange(){
-	inputSearch.value=regionData.name[findNameIndex(regionNameList.value)];
+	var index=findNameIndex(regionNameList.value);
+	inputSearch.value=regionData.name[index];
+	showRegionOnMap(index);
 }
 
 function onAddName(){
@@ -343,19 +366,40 @@ function rect_geojson(lonInt,latInt){
 	var lonEast=lonInt+1;
 	var latSouth=latInt;
 	var latNorth=latInt+1;
+	return [[
+		[lonWest, latSouth],  // bottom-left
+		[lonEast, latSouth],  // bottom-right
+		[lonEast, latNorth],  // top-right
+		[lonWest, latNorth],  // top-left
+		[lonWest, latSouth]   // close the ring
+	]];
+}
+
+//[[lonInt,latInt],[lonInt,latInt],...]
+function region_geojson(coordList){
+	var rectList=[];
+	for(var i=0;i<coordList.length;i++){
+		rectList.push(rect_geojson(coordList[i][0],coordList[i][1]));
+	}
 	return {
-		type: 'Feature',
-		geometry: {
-			type: 'Polygon',
-			coordinates: [[
-				[lonWest, latSouth],  // bottom-left
-				[lonEast, latSouth],  // bottom-right
-				[lonEast, latNorth],  // top-right
-				[lonWest, latNorth],  // top-left
-				[lonWest, latSouth]   // close the ring
-			]]
+		type: "Feature",
+		geometry:{
+			type:"MultiPolygon",
+			coordinates:rectList
 		}
 	};
+}
+
+function showRegionOnMap(nameIndex){
+	var coordList=[];
+	for(var y=-90;y<90;y++){
+		for(var x=-180;x<180;x++){
+			if(regionData.table[y+90][x+180]===nameIndex){
+				coordList.push([x,y]);
+			}
+		}
+	}
+	map.getSource("regionSource").setData(region_geojson(coordList));
 }
 
 function str_xor(a,key){
@@ -365,6 +409,8 @@ function str_xor(a,key){
 	}
 	return s;
 }
+
+var lastPointRegionName=null;
 
 function fe_main(){
 	//Mapbox参考：https://docs.mapbox.com/mapbox-gl-js/guides/
@@ -395,8 +441,7 @@ function fe_main(){
 	const lngElement = document.getElementById('lng');
 	const latElement = document.getElementById('lat');
 	const regionNameElement = document.getElementById('region_name');
-	// 5. 监听鼠标移动事件，实时更新经纬度
-	map.on('mousemove', (e) => {
+	const mouseCallback=(e)=>{
 		// 获取鼠标指向的经纬度
 		const longitude = e.lngLat.lng.toFixed(2);
 		const latitude = e.lngLat.lat.toFixed(2);
@@ -405,9 +450,21 @@ function fe_main(){
 		lngElement.textContent = longitude;
 		latElement.textContent = latitude;
 		if(regionData){
-			regionNameElement.textContent = get_regionName(latitude,longitude);
+			var n=get_regionName(latitude,longitude);
+			regionNameElement.textContent = n;
+			if(showPointingRegion.checked&&lastPointRegionName!==n){
+				lastPointRegionName=n;
+				showRegionOnMap(findNameIndex(n));
+			}
+			if(e.originalEvent.button===1){
+				regionNameList.value=n;
+				onRegionNameListChange();
+			}
 		}
-	});
+	}
+	// 5. 监听鼠标移动事件，实时更新经纬度
+	map.on('mousemove', mouseCallback);
+	map.on('mousedown', mouseCallback);
 
 	// 6. 鼠标离开地图时重置显示
 	map.on('mouseleave', () => {
@@ -416,24 +473,19 @@ function fe_main(){
 	});
 
 	map.on('load', () => {
-		for(var y=-90;y<90;y++){
-			for(var x=-180;x<180;x++){
-				map.addSource('my-rectangle', {
-					type: 'geojson',
-					data: rect_geojson(x,y)
-				});
-			}
-		}
-
-		// Add a fill layer to render the rectangle
+		map.addSource("regionSource",{
+			type:"geojson",
+			data:region_geojson([])
+		})
 		map.addLayer({
-			id: 'my-rectangle-fill',
+			id: 'regionFill',
 			type: 'fill',
-			source: 'my-rectangle',
+			source: 'regionSource',
 			paint: {
 				'fill-color': '#0080ff',
 				'fill-opacity': 0.5
-			}
+			},
+			visibility: 'visible'
 		});
 	});
 

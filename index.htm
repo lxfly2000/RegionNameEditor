@@ -372,8 +372,21 @@ function rect_geojson(lonInt,latInt){
 		[lonWest, latSouth],  // bottom-left
 		[lonEast, latSouth],  // bottom-right
 		[lonEast, latNorth],  // top-right
+		[lonWest, latNorth]   // top-left
+	]];
+}
+
+function rect_closed_geojson(lonInt,latInt){
+	var lonWest=lonInt;
+	var lonEast=lonInt+1;
+	var latSouth=latInt;
+	var latNorth=latInt+1;
+	return [[
+		[lonWest, latSouth],  // bottom-left
+		[lonEast, latSouth],  // bottom-right
+		[lonEast, latNorth],  // top-right
 		[lonWest, latNorth],  // top-left
-		[lonWest, latSouth]   // close the ring
+		[lonWest, latSouth]
 	]];
 }
 
@@ -388,6 +401,16 @@ function region_geojson(coordList){
 		geometry:{
 			type:"MultiPolygon",
 			coordinates:rectList
+		}
+	};
+}
+
+function region_box_geojson(coord){
+	return {
+		type: "Feature",
+		geometry:{
+			type:"Polygon",
+			coordinates:rect_closed_geojson(coord[0],coord[1])
 		}
 	};
 }
@@ -413,6 +436,7 @@ function str_xor(a,key){
 }
 
 var lastPointRegionName=null;
+var lastPointingCoord=[0,0];//lon,lat
 
 function fe_main(){
 	//Mapbox参考：https://docs.mapbox.com/mapbox-gl-js/guides/
@@ -463,6 +487,12 @@ function fe_main(){
 				onRegionNameListChange();
 			}
 		}
+		const lonInt=Math.floor(longitude);
+		const latInt=Math.floor(latitude);
+		if(lonInt!==lastPointingCoord[0]||latInt!==lastPointingCoord[1]){
+			lastPointingCoord=[lonInt,latInt];
+			map.getSource("pointingSource").setData(region_box_geojson(lastPointingCoord));
+		}
 	}
 	// 5. 监听鼠标移动事件，实时更新经纬度
 	map.on('mousemove', mouseCallback);
@@ -478,7 +508,11 @@ function fe_main(){
 		map.addSource("regionSource",{
 			type:"geojson",
 			data:region_geojson([])
-		})
+		});
+		map.addSource("pointingSource",{
+			type:"geojson",
+			data:region_geojson([])
+		});
 		map.addLayer({
 			id: 'regionFill',
 			type: 'fill',
@@ -486,6 +520,17 @@ function fe_main(){
 			paint: {
 				'fill-color': '#0080ff',
 				'fill-opacity': 0.5
+			},
+			visibility: 'visible'
+		});
+		map.addLayer({
+			id: 'regionPointing',
+			type: 'line',
+			source: 'pointingSource',
+			paint: {
+				'line-color': '#ffc020',
+				'line-width': 2,
+				'line-opacity': 0.8
 			},
 			visibility: 'visible'
 		});

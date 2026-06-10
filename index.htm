@@ -56,6 +56,7 @@ body {
 	width: 60px;
 	display: inline-block;
 	font-family: monospace;
+	text-align: right;
 }
 
 #map {
@@ -87,7 +88,7 @@ body {
 	</style>
 </head>
 
-<body>
+<body onbeforeunload="return fileSaved()">
 	<!-- 顶部经纬度显示区域 -->
 	<div class="FloatBox Topleft Row">
 		<div class="FillBox Column">
@@ -154,9 +155,7 @@ body {
 var regionData=null;//{table:[[...],...],name:["Name1",...]}
 
 function showHelp(){
-	alert("左键拖动，中键选择，右键填充。\n获取经纬度对应地名：(-90≤lat＜90, -180≤lon＜180)\n"+
-	'const regions=JSON.parse("regions.json文件内容");\n'+
-	"const name=regions.name[regions.table[Math.floor(lat)+90][Math.floor(lon)+180]];");
+	open("https://github.com/lxfly2000/RegionNameEditor");
 }
 
 function open_regionName() {
@@ -183,7 +182,14 @@ function onClearNameList(){
 	if(confirm("这会清空所有数据，是否继续？")){
 		regionData.name=["未定义"];
 		filterNameList("");
+		edited=true;
 	}
+}
+
+var edited=false;
+
+function fileSaved(){
+	return !edited;
 }
 
 function loadRegionFile(str){
@@ -325,6 +331,7 @@ function onAddName(){
 	regionNameList.innerHTML+="<option value='"+inputSearch.value+"'>"+inputSearch.value+"</option>";
 	regionData.name.push(inputSearch.value);
 	regionNameList.value=inputSearch.value;
+	edited=true;
 }
 
 function onRemoveName(){
@@ -337,6 +344,7 @@ function onRemoveName(){
 	}
 	regionData.name.splice(index,1);
 	regionNameList.removeChild(regionNameList.childNodes[index]);
+	edited=true;
 	index=Math.min(Math.max(0,index),regionData.name.length-1);
 	if(index<0||index>=regionData.name.length){
 		return;
@@ -363,6 +371,7 @@ function onModifyName(){
 	regionData.name[index]=inputSearch.value;
 	regionNameList.childNodes[index].value=inputSearch.value;
 	regionNameList.childNodes[index].textContent=inputSearch.value;
+	edited=true;
 }
 
 function rect_geojson(lonInt,latInt){
@@ -499,6 +508,7 @@ function fe_main(){
 				if(index!==-1&&index!==regionData.table[y][x]){
 					regionData.table[y][x]=index;
 					showRegionOnMap(index);
+					edited=true;
 				}
 			}
 		}

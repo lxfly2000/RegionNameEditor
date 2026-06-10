@@ -88,7 +88,7 @@ body {
 	</style>
 </head>
 
-<body onbeforeunload="return fileSaved()">
+<body onbeforeunload="return unsavedPrompt()">
 	<!-- 顶部经纬度显示区域 -->
 	<div class="FloatBox Topleft Row">
 		<div class="FillBox Column">
@@ -188,8 +188,8 @@ function onClearNameList(){
 
 var edited=false;
 
-function fileSaved(){
-	return !edited;
+function unsavedPrompt(){
+	return edited?"有未保存的修改，是否退出？":null;
 }
 
 function loadRegionFile(str){

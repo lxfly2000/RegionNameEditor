@@ -358,6 +358,14 @@ function rect_geojson(lonInt,latInt){
 	};
 }
 
+function str_xor(a,key){
+	var s="";
+	for(var i=0;i<a.length;i++){
+		s+=String.fromCharCode(a.charCodeAt(i)^key.charCodeAt(i%key.length));
+	}
+	return s;
+}
+
 function fe_main(){
 	//Mapbox参考：https://docs.mapbox.com/mapbox-gl-js/guides/
 	mapboxgl.setRTLTextPlugin(
@@ -367,7 +375,7 @@ function fe_main(){
 	);
 
 	window.map = new mapboxgl.Map({
-		accessToken: get_query("mapboxAccessToken","pk.eyJ1IjoibHhmbHkyMDAwIiwiYSI6ImNtNjlkb2k1OTA5aGgyaXNkeTRtbTFpMTMifQ.aISHpciwWgFtyC1ibIR5Jg"),
+		accessToken: get_query("mapboxAccessToken",str_xor(')>v+ \x1Fi\x073:1,\x11=5,\x11>!\x03\x1D\x14/\x070"1\x17\n\x1Cn\x074\x1B,-\r1"\x17\x0E"!\x00\x1D\x14!*3\x18!-\x01\x18l\x147\x1F.+\x1D96\x01\x1E:1(\b{u\x1A\x03e /\x1F\x00=\x117l\n\x18j$\x15-\ba\x0F\x1F',"YUXN")),
 		container: 'map',
 		style: get_query("mapboxStyle","mapbox://styles/lxfly2000/clgijkcjz006x01pk870j2uxo"), // Use the standard style for the map
 		projection: mapProjection.value, // display the map as a globe

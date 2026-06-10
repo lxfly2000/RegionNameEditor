@@ -380,7 +380,8 @@ function fe_main(){
 		style: get_query("mapboxStyle","mapbox://styles/lxfly2000/clgijkcjz006x01pk870j2uxo"), // Use the standard style for the map
 		projection: mapProjection.value, // display the map as a globe
 		zoom: 1, // initial zoom level, 0 is the world view, higher values zoom in
-		center: [106.4, 29.8] // center the map on this longitude and latitude
+		center: [106.4, 29.8], // center the map on this longitude and latitude
+		dragRotate: false
 	});
 
 	map.addControl(new mapboxgl.NavigationControl());

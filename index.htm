@@ -64,6 +64,26 @@ body {
 	bottom: 0;
 	width: 100%;
 }
+
+@media (min-width: 600px){
+	.DynRowCol>div{
+		display: inline-block;
+	}
+	.DynHeight{
+		height: 100%;
+	}
+}
+@media (max-width: 600px){
+	.Topright{
+		right: -10px;
+	}
+	.DynHeight{
+		height: 150px;
+	}
+	.mapboxgl-control-container{
+		display: none;
+	}
+}
 	</style>
 </head>
 
@@ -89,7 +109,7 @@ body {
 			<noscript>本页面需要打开JavaScript才能正常运行。</noscript>
 		</div>
 	</div>
-	<div class="FloatBox Topright Row" style="bottom: 50px;">
+	<div class="FloatBox Topright DynRowCol" style="bottom: 50px;">
 		<div class="FillBox Column">
 			<div class="Row">
 				投影：
@@ -103,10 +123,10 @@ body {
 				<input type="checkbox" id="showEditLayer" checked><label for="showEditLayer">显示编辑层</label>
 			</div>
 		</div>
-		<div class="FillBox Column" style="height: 100%;">
+		<div id="collapseBox" class="FillBox Column DynHeight">
 			<div style="height: 100%;display: flex;flex-direction: column;">
 				<div class="Row">
-					<input id="inputSearch" placeholder="输入名称…" onchange="onSearchChange()" style="width: 200px;"/>
+					<input id="inputSearch" placeholder="输入名称…" oninput="onSearchChange(inputSearch.value)" style="width: 200px;"/>
 				</div>
 				<div class="Row">
 					<button onclick="onAddName()">添加</button>
@@ -115,10 +135,13 @@ body {
 					<input type="checkbox" id="checkSearchName" onchange="onCheckSearchName()"><label for="checkSearchName">查找</label>
 				</div>
 				<div class="Row" style="flex-grow: 1;">
-					<select id="regionNameList" onchange="onRegionNameListChange()" multiple style="width: 200px;height: 100%;">
-						<option>TODO</option>
-					</select>
+					<!--设置size≥2以列表显示-->
+					<select id="regionNameList" onchange="onRegionNameListChange()" size="2" style="width: 200px;height: 100%;"></select>
 				</div>
+				<table><tbody><tr>
+					<td><button id="buttonCollapseNameList" onclick="onCollapseNameList()">收起</button></td>
+					<td align="right"><button onclick="onClearNameList()">清空</button></td>
+				</tr></tbody></table>
 			</div>
 		</div>
 	</div>
@@ -140,11 +163,33 @@ function open_regionName() {
 	fileReader.onload=()=>{loadRegionFile(fileReader.result);};
 }
 
+function onCollapseNameList(){
+	if(collapseBox.className.indexOf("DynHeight")===-1){
+		collapseBox.className=collapseBox.className+" DynHeight";
+		buttonCollapseNameList.textContent="收起";
+	}else{
+		collapseBox.className=collapseBox.className.replace("DynHeight","").trim();
+		buttonCollapseNameList.textContent="展开";
+	}
+}
+
+function onClearNameList(){
+	if(confirm("这会清空所有数据，是否继续？")){
+		regionData.name=["未定义"];
+		filterNameList("");
+	}
+}
+
 function loadRegionFile(str){
 	const json=JSON.parse(str);
 	if(check_regionName_valid(json)){
 		regionData=json;
 		//TODO:加载到地图、界面上
+		var opts="";
+		for(var i=0;i<regionData.name.length;i++){
+			opts+="<option value='"+regionData.name[i]+"'>"+regionData.name[i]+"</option>";
+		}
+		regionNameList.innerHTML=opts;
 	}else{
 		alert("无法读取该文件。");
 	}
@@ -199,12 +244,92 @@ function onProjectionChange(){
 	window.map.setProjection(mapProjection.value);
 }
 
-function onSearchChange(){
-	//
+function onCheckSearchName(){
+	filterNameList(checkSearchName.checked?inputSearch.value:"");
+	for(var i=0;i<regionNameList.childNodes.length;i++){
+		if(regionNameList.childNodes[i].value.indexOf(inputSearch.value)!==-1){
+			regionNameList.value=regionNameList.childNodes[i].value;
+			break;
+		}
+	}
+}
+
+function onSearchChange(s){
+	if(checkSearchName.checked){
+		filterNameList(s);
+		for(var i=0;i<regionNameList.childNodes.length;i++){
+			if(regionNameList.childNodes[i].value.indexOf(s)!==-1){
+				regionNameList.value=regionNameList.childNodes[i].value;
+				break;
+			}
+		}
+	}
+}
+
+function filterNameList(s){
+	var opts="";
+	for(var i=0;i<regionData.name.length;i++){
+		if(regionData.name[i].indexOf(s)!==-1){
+			opts+="<option value='"+regionData.name[i]+"'>"+regionData.name[i]+"</option>";
+		}
+	}
+	regionNameList.innerHTML=opts;
+}
+
+function findNameIndex(s){
+	return regionData.name.indexOf(s);
 }
 
 function onRegionNameListChange(){
-	//
+	inputSearch.value=regionData.name[findNameIndex(regionNameList.value)];
+}
+
+function onAddName(){
+	if(checkSearchName.checked){
+		checkSearchName.click();
+	}
+	if(findNameIndex(inputSearch.value)!==-1){
+		alert("已存在该名称。");
+		return;
+	}
+	regionNameList.innerHTML+="<option value='"+inputSearch.value+"'>"+inputSearch.value+"</option>";
+	regionData.name.push(inputSearch.value);
+	regionNameList.value=inputSearch.value;
+}
+
+function onRemoveName(){
+	if(checkSearchName.checked){
+		checkSearchName.click();
+	}
+	var index=findNameIndex(regionNameList.value);
+	if(index<0||index>=regionData.name.length){
+		return;
+	}
+	regionData.name.splice(index,1);
+	regionNameList.removeChild(regionNameList.childNodes[index]);
+	index=Math.min(Math.max(0,index),regionData.name.length-1);
+	if(index<0||index>=regionData.name.length){
+		return;
+	}
+	regionNameList.value=regionData.name[index];
+	inputSearch.value=regionData.name[index];
+}
+
+function onModifyName(){
+	if(checkSearchName.checked){
+		checkSearchName.click();
+	}
+	if(findNameIndex(inputSearch.value)!==-1){
+		alert("已存在该名称。");
+		return;
+	}
+	var index=findNameIndex(regionNameList.value);
+	if(index<0||index>=regionData.name.length){
+		return;
+	}
+	regionData.name[index]=inputSearch.value;
+	regionNameList.childNodes[index].value=inputSearch.value;
+	regionNameList.childNodes[index].textContent=inputSearch.value;
 }
 
 function rect_geojson(lonInt,latInt){

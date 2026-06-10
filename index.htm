@@ -185,17 +185,19 @@ function onClearNameList(){
 }
 
 function loadRegionFile(str){
-	const json=JSON.parse(str);
-	if(check_regionName_valid(json)){
-		regionData=json;
-		var opts="";
-		for(var i=0;i<regionData.name.length;i++){
-			opts+="<option value='"+regionData.name[i]+"'>"+regionData.name[i]+"</option>";
+	try{
+		const json=JSON.parse(str);
+		if(check_regionName_valid(json)){
+			regionData=json;
+			var opts="";
+			for(var i=0;i<regionData.name.length;i++){
+				opts+="<option value='"+regionData.name[i]+"'>"+regionData.name[i]+"</option>";
+			}
+			regionNameList.innerHTML=opts;
+			return;
 		}
-		regionNameList.innerHTML=opts;
-	}else{
-		alert("无法读取该文件。");
-	}
+	}catch(e){}
+	alert("无法读取该文件。");
 }
 
 function save_regionName() {
@@ -223,16 +225,16 @@ function get_regionName(lat,lon){
 	try{
 		return regionData.name[regionData.table[Math.floor(lat)+90][Math.floor(_normLongitude(lon))+180]];
 	}catch(e){
-		console.error("获取区域名称出错："+e.message);
+		//console.error("获取区域名称出错："+e.message);
 	}
 	return "";
 }
 
 function check_regionName_valid(json_data){
 	try{
-		for(var y=0;lat<90;lat++){
-			for(var lon=-180;lon<180;lon++){
-				if(typeof json_data.name[json_data.table[lat]] !== "string"){
+		for(var y=0;y<180;y++){
+			for(var x=0;x<360;x++){
+				if(typeof json_data.name[json_data.table[y][x]] !== "string"){
 					return false;
 				}
 			}

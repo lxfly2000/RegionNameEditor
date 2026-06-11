@@ -24,3 +24,8 @@
 const regions=JSON.parse("regions.json文件内容");
 const name=regions.name[regions.table[Math.floor(lat)+90][Math.floor(lon)+180]];
 ```
+## 使用自定义Token和Style
+可在访问的URL后面加上查询参数`mapboxAccessToken`和`mapboxStyle`：
+```
+https://lxfly2000.github.io/RegionNameEditor/?mapboxAccessToken=【Token】&mapboxStyle=【Style】
+```

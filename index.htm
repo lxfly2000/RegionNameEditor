@@ -181,8 +181,16 @@ function onCollapseNameList(){
 function onClearNameList(){
 	if(confirm("这会清空所有数据，是否继续？")){
 		regionData.name=["未定义"];
+		//调整查找表
+		for(var y=0;y<180;y++){
+			for(var x=0;x<360;x++){
+				regionData.table[y][x]=0;
+			}
+		}
 		filterNameList("");
 		edited=true;
+		regionNameList.value=regionData.name[0];
+		inputSearch.value=regionData.name[0];
 	}
 }
 
@@ -328,8 +336,26 @@ function onAddName(){
 		alert("已存在该名称。");
 		return;
 	}
-	regionNameList.innerHTML+="<option value='"+inputSearch.value+"'>"+inputSearch.value+"</option>";
-	regionData.name.push(inputSearch.value);
+	const index=findNameIndex(regionNameList.value);
+	var newOption=document.createElement("option");
+	newOption.value=inputSearch.value;
+	newOption.text=inputSearch.value;
+	if(index<0||index>=regionData.name.length){
+		regionNameList.appendChild(newOption);
+		regionData.name.push(inputSearch.value);
+	}else{
+		regionNameList.add(newOption,index);
+		regionData.name.splice(index,0,inputSearch.value);
+		//调整查找表
+		for(var y=0;y<180;y++){
+			for(var x=0;x<360;x++){
+				var oldIndex=regionData.table[y][x];
+				if(oldIndex>=index){
+					regionData.table[y][x]++;
+				}
+			}
+		}
+	}
 	regionNameList.value=inputSearch.value;
 	edited=true;
 }
@@ -338,12 +364,23 @@ function onRemoveName(){
 	if(checkSearchName.checked){
 		checkSearchName.click();
 	}
-	const index=findNameIndex(regionNameList.value);
+	var index=findNameIndex(regionNameList.value);
 	if(index<0||index>=regionData.name.length){
 		return;
 	}
 	regionData.name.splice(index,1);
 	regionNameList.removeChild(regionNameList.childNodes[index]);
+	//调整查找表
+	for(var y=0;y<180;y++){
+		for(var x=0;x<360;x++){
+			var oldIndex=regionData.table[y][x];
+			if(oldIndex===index){
+				regionData.table[y][x]=0;
+			}else if(oldIndex>=index){
+				regionData.table[y][x]--;
+			}
+		}
+	}
 	edited=true;
 	index=Math.min(Math.max(0,index),regionData.name.length-1);
 	if(index<0||index>=regionData.name.length){
@@ -489,17 +526,8 @@ function fe_main(){
 		// 更新页面显示
 		lngElement.textContent = longitude;
 		latElement.textContent = latitude;
+		//用蓝色框显示选择区域
 		if(regionData){
-			const n=get_regionName(latitude,longitude);
-			regionNameElement.textContent = n;
-			if(showPointingRegion.checked&&lastPointRegionName!==n){
-				lastPointRegionName=n;
-				showRegionOnMap(findNameIndex(n));
-			}
-			if(e.originalEvent.button===1){
-				regionNameList.value=n;
-				onRegionNameListChange();
-			}
 			if(e.originalEvent.button===2||rmbStatus===1){
 				rmbStatus=1;
 				const x=lonInt+180;
@@ -511,7 +539,17 @@ function fe_main(){
 					edited=true;
 				}
 			}
+			const n=get_regionName(latitude,longitude);
+			regionNameElement.textContent = n;
+			if(e.originalEvent.button===1){
+				regionNameList.value=n;
+				onRegionNameListChange();
+			}else if(showPointingRegion.checked&&lastPointRegionName!==n){
+				lastPointRegionName=n;
+				showRegionOnMap(findNameIndex(n));
+			}
 		}
+		//显示黄色指示框
 		if(lonInt!==lastPointingCoord[0]||latInt!==lastPointingCoord[1]){
 			lastPointingCoord=[lonInt,latInt];
 			map.getSource("pointingSource").setData(region_box_geojson(lastPointingCoord));

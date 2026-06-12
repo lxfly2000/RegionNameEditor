@@ -530,7 +530,7 @@ function fe_main(){
 		if(regionData){
 			if(e.originalEvent.button===2||rmbStatus===1){
 				rmbStatus=1;
-				const x=lonInt+180;
+				const x=_normLongitude(lonInt)+180;
 				const y=latInt+90;
 				var index=findNameIndex(regionNameList.value);
 				if(index!==-1&&index!==regionData.table[y][x]){
